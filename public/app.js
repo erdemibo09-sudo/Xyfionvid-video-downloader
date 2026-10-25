@@ -747,6 +747,22 @@ document.addEventListener("DOMContentLoaded", () => {
     triggerOpenFolder("");
   });
 
+  // Dışarıdan veya eklentiden gelen aktif indirmeleri eşitle
+  async function syncActiveJobs() {
+    try {
+      const res = await fetch("/api/active");
+      if (!res.ok) return;
+      const list = await res.json();
+      for (const job of list) {
+        if (!activeDownloads.has(job.id) && job.status !== "completed" && job.status !== "error" && job.status !== "cancelled") {
+          createDownloadCard(job.id, job.title, job.formatType);
+        }
+      }
+    } catch {}
+  }
+  setInterval(syncActiveJobs, 2000);
+  syncActiveJobs();
+
   // İlk yüklemede geçmişi çek
   loadHistory();
 });

@@ -296,6 +296,18 @@ async function handleRequest(req: Request): Promise<Response> {
       if (cookieBrowser) {
         args.push("--cookies-from-browser", cookieBrowser);
       }
+
+      if (userAgent) {
+        args.push("--user-agent", userAgent);
+      }
+
+      if (pageUrl) {
+        args.push("--referer", pageUrl);
+        try {
+          const origin = new URL(pageUrl).origin;
+          args.push("--add-header", `Origin:${origin}`);
+        } catch {}
+      }
       args.push(videoUrl);
 
       const cmd = new Deno.Command(ytDlpPath, {
@@ -357,7 +369,7 @@ async function handleRequest(req: Request): Promise<Response> {
   if (url.pathname === "/api/download" && req.method === "POST") {
     try {
       const body = await req.json();
-      const { videoUrl, formatType = "mp4", quality = "best", title = "", subtitles = false } = body;
+      const { videoUrl, formatType = "mp4", quality = "best", title = "", subtitles = false, pageUrl = "", userAgent = "" } = body;
 
       if (!videoUrl) {
         return new Response(JSON.stringify({ error: "URL gerekli" }), {
@@ -415,6 +427,18 @@ async function handleRequest(req: Request): Promise<Response> {
         args.push("--cookies-from-browser", cookieBrowser);
       }
 
+      if (userAgent) {
+        args.push("--user-agent", userAgent);
+      }
+
+      if (pageUrl) {
+        args.push("--referer", pageUrl);
+        try {
+          const origin = new URL(pageUrl).origin;
+          args.push("--add-header", `Origin:${origin}`);
+        } catch {}
+      }
+
       args.push("-o", `${DOWNLOADS_DIR}\\%(title).180B [%(id)s].%(ext)s`);
 
       if (formatType === "mp3") {
@@ -438,7 +462,7 @@ async function handleRequest(req: Request): Promise<Response> {
           if (formatType === "webm") {
             args.push("-f", "bv*[ext=webm]+ba[ext=webm]/bv*+ba/b");
           } else {
-            args.push("-f", "bv*[ext=mp4]+ba[ext=m4a]/bv*+ba/b[ext=mp4]/b");
+            args.push("-f", "bv*[ext=mp4]+ba[ext=m4a]/bv*+ba/b[ext=mp4]/best/b");
           }
         } else {
           const height = parseInt(quality, 10);
@@ -455,7 +479,7 @@ async function handleRequest(req: Request): Promise<Response> {
               );
             }
           } else {
-            args.push("-f", "bv*[ext=mp4]+ba[ext=m4a]/bv*+ba/b[ext=mp4]/b");
+            args.push("-f", "bv*[ext=mp4]+ba[ext=m4a]/bv*+ba/b[ext=mp4]/best/b");
           }
         }
         args.push("--merge-output-format", mergeExt);
@@ -661,6 +685,27 @@ async function handleRequest(req: Request): Promise<Response> {
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
+  }
+
+  // 3.1 Aktif İndirmeler Listesi (GET /api/active)
+  if (url.pathname === "/api/active" && req.method === "GET") {
+    const list = Array.from(jobs.values()).map((j) => ({
+      id: j.id,
+      title: j.title,
+      formatType: j.formatType,
+      quality: j.quality,
+      percent: j.percent,
+      speed: j.speed,
+      eta: j.eta,
+      downloadedBytes: j.downloadedBytes,
+      totalBytes: j.totalBytes,
+      status: j.status,
+      outputFile: j.outputFile,
+      error: j.error,
+    }));
+    return new Response(JSON.stringify(list), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
 
   // 4. İlerleme Takibi (SSE - Server-Sent Events)

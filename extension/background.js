@@ -44,12 +44,13 @@ function detectMediaType(url, contentType = "") {
 // 1. Ağ Trafiğini Dinle (onBeforeRequest)
 chrome.webRequest.onBeforeRequest.addListener(
   (details) => {
-    const { tabId, url, method } = details;
+    const { tabId, url, method, initiator, documentUrl, originUrl } = details;
     if (tabId < 0 || method !== "GET") return;
     if (EXCLUDED_REGEX.test(url)) return;
 
+    const referer = originUrl || documentUrl || initiator || "";
     if (MEDIA_EXT_REGEX.test(url)) {
-      registerMedia(tabId, url);
+      registerMedia(tabId, url, "", referer);
     }
   },
   { urls: ["<all_urls>"] }
@@ -58,7 +59,7 @@ chrome.webRequest.onBeforeRequest.addListener(
 // 2. Yanıt Başlıklarını Dinle (MIME Type üzerinden medya yakalama)
 chrome.webRequest.onResponseStarted.addListener(
   (details) => {
-    const { tabId, url, responseHeaders } = details;
+    const { tabId, url, responseHeaders, initiator, documentUrl, originUrl } = details;
     if (tabId < 0) return;
     if (EXCLUDED_REGEX.test(url)) return;
 
@@ -74,7 +75,8 @@ chrome.webRequest.onResponseStarted.addListener(
 
     const isVideo = contentType.startsWith("video/") || contentType.includes("mpegurl") || contentType.includes("dash+xml");
     if (isVideo) {
-      registerMedia(tabId, url, contentType);
+      const referer = originUrl || documentUrl || initiator || "";
+      registerMedia(tabId, url, contentType, referer);
     }
   },
   { urls: ["<all_urls>"] },
@@ -82,7 +84,7 @@ chrome.webRequest.onResponseStarted.addListener(
 );
 
 // 3. Yakalanan Medyayı Kaydet ve Rozeti Güncelle
-function registerMedia(tabId, rawUrl, contentType = "") {
+function registerMedia(tabId, rawUrl, contentType = "", referer = "") {
   const url = cleanMediaUrl(rawUrl);
 
   // TS parçalarını tek tek kaydetme, doğrudan .m3u8 ana akışı ara
@@ -104,7 +106,7 @@ function registerMedia(tabId, rawUrl, contentType = "") {
     const mediaItem = {
       id: "media_" + Date.now() + "_" + Math.random().toString(36).substring(2, 6),
       url: url,
-      pageUrl: tab?.url || "",
+      pageUrl: referer || tab?.url || "",
       title: tabTitle,
       type: mediaType,
       detectedAt: new Date().toLocaleTimeString("tr-TR"),
@@ -162,7 +164,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
 
   if (request.action === "DOWNLOAD_MEDIA") {
-    const { videoUrl, title, formatType = "mp4", quality = "best" } = request;
+    const { videoUrl, title, formatType = "mp4", quality = "best", pageUrl = "" } = request;
 
     fetch(`${SERVER_URL}/api/download`, {
       method: "POST",
@@ -170,6 +172,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       body: JSON.stringify({
         videoUrl,
         title: title || "Web Videosu",
+        pageUrl: pageUrl,
         formatType,
         quality,
       }),

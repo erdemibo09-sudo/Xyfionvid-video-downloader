@@ -11,12 +11,14 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   let currentTabId = null;
   let currentTabTitle = "Web Videosu";
+  let currentTabUrl = "";
 
   // 1. Aktif sekmeyi tespit et
   const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
   if (activeTab) {
     currentTabId = activeTab.id;
     currentTabTitle = activeTab.title || "Web Videosu";
+    currentTabUrl = activeTab.url || "";
     tabTitleEl.textContent = currentTabTitle;
   }
 
@@ -87,19 +89,19 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       // MP3 İndir
       card.querySelector(".btn-audio").addEventListener("click", () => {
-        sendDownload(item.url, item.title, "mp3", card.querySelector(".btn-audio"));
+        sendDownload(item.url, item.title, "mp3", card.querySelector(".btn-audio"), item.pageUrl);
       });
 
       // MP4 İndir
       card.querySelector(".btn-video").addEventListener("click", () => {
-        sendDownload(item.url, item.title, "mp4", card.querySelector(".btn-video"));
+        sendDownload(item.url, item.title, "mp4", card.querySelector(".btn-video"), item.pageUrl);
       });
 
       mediaList.appendChild(card);
     });
   }
 
-  function sendDownload(url, title, formatType, buttonEl) {
+  function sendDownload(url, title, formatType, buttonEl, customPageUrl = "") {
     const originalText = buttonEl.textContent;
     buttonEl.disabled = true;
     buttonEl.textContent = "İletiliyor...";
@@ -109,6 +111,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         action: "DOWNLOAD_MEDIA",
         videoUrl: url,
         title: title || currentTabTitle,
+        pageUrl: customPageUrl || currentTabUrl,
         formatType: formatType,
         quality: "best",
       },
