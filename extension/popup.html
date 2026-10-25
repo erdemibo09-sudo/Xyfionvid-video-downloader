@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <title>XyfionVid Yakalayıcı</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="popup-container">
+    <!-- Üst Başlık -->
+    <header class="popup-header">
+      <div class="brand">
+        <div class="brand-icon">⚡</div>
+        <div class="brand-text">
+          <h1>XyfionVid</h1>
+          <span class="brand-sub">Medya Yakalayıcı</span>
+        </div>
+      </div>
+      <div class="server-status" id="serverStatus" title="Masaüstü Sunucusu Durumu">
+        <span class="status-dot offline" id="statusDot"></span>
+        <span class="status-text" id="statusText">Bağlanıyor...</span>
+      </div>
+    </header>
+
+    <!-- Geçerli Sekme Bilgisi -->
+    <div class="tab-info-card">
+      <div class="tab-title" id="tabTitle">Geçerli Sayfa</div>
+      <div class="tab-stats">
+        <span class="badge" id="mediaCountBadge">0 Video Algılandı</span>
+        <button class="btn-text" id="btnClearMedia" title="Listeyi temizle">Temizle</button>
+      </div>
+    </div>
+
+    <!-- Medya Listesi -->
+    <main class="media-list" id="mediaList">
+      <!-- Boş Durum -->
+      <div class="empty-state" id="emptyState">
+        <div class="radar-pulse">📡</div>
+        <h3>Henüz video algılanmadı</h3>
+        <p>Sayfadaki video oynatıcıda <b>"Oynat" (Play)</b> butonuna basın. Video akışı başladığında burada anında listelenecektir.</p>
+      </div>
+    </main>
+
+    <!-- Alt Çubuk -->
+    <footer class="popup-footer">
+      <a href="http://localhost:3000" target="_blank" class="footer-link">
+        <span>Masaüstü Uygulamasını Aç</span>
+        <span>↗</span>
+      </a>
+    </footer>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
