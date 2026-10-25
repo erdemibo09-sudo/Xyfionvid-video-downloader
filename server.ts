@@ -69,8 +69,10 @@ async function serveStaticFile(reqPath: string): Promise<Response> {
 // yt-dlp ve ffmpeg yollarını tespit et
 function findExecutablePaths() {
   const localAppData = Deno.env.get("LOCALAPPDATA") || "";
+  const binDir = `${ROOT_DIR}\\bin`;
 
   const ytCandidates = [
+    `${binDir}\\yt-dlp.exe`,
     `${localAppData}\\Microsoft\\WinGet\\Packages\\yt-dlp.yt-dlp_Microsoft.Winget.Source_8wekyb3d8bbwe\\yt-dlp.exe`,
     `${localAppData}\\Microsoft\\WinGet\\Links\\yt-dlp.exe`,
     "yt-dlp.exe",
@@ -93,6 +95,8 @@ function findExecutablePaths() {
   }
 
   const ffmpegCandidates = [
+    `${binDir}\\ffmpeg.exe`,
+    `${binDir}\\bin\\ffmpeg.exe`,
     `${localAppData}\\Microsoft\\WinGet\\Packages\\yt-dlp.FFmpeg_Microsoft.Winget.Source_8wekyb3d8bbwe\\ffmpeg-N-126374-g089a48eb36-win64-gpl\\bin\\ffmpeg.exe`,
     `${localAppData}\\Microsoft\\WinGet\\Links\\ffmpeg.exe`,
     "ffmpeg.exe",

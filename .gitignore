@@ -2,6 +2,11 @@
 downloads/*
 !downloads/.gitkeep
 
+# Taşınabilir ikili dosyalar ve paketler (GitHub 100MB limitini aşmamak için)
+bin/
+*.zip
+*.tar.gz
+
 # Günlük ve sistem dosyaları
 *.log
 .DS_Store
