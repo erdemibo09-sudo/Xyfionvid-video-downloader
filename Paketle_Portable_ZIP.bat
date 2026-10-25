@@ -27,7 +27,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -Command ^
   "$destZip = Join-Path $curr 'XyfionVid-Portable.zip';" ^
   "if (Test-Path $destZip) { Remove-Item $destZip -Force };" ^
   "$ProgressPreference = 'SilentlyContinue';" ^
-  "Compress-Archive -Path (Join-Path $curr 'Start.bat'), (Join-Path $curr 'Eklenti_Kurulumu.bat'), (Join-Path $curr 'server.ts'), (Join-Path $curr 'public'), (Join-Path $curr 'extension'), $binDir, (Join-Path $curr 'README.md'), (Join-Path $curr 'LICENSE') -DestinationPath $destZip -Force;" ^
+  "Compress-Archive -Path (Join-Path $curr 'Start.bat'), (Join-Path $curr 'Eklenti_Kurulumu.bat'), (Join-Path $curr 'XyfionVid-Firefox.xpi'), (Join-Path $curr 'server.ts'), (Join-Path $curr 'public'), (Join-Path $curr 'extension'), $binDir, (Join-Path $curr 'README.md'), (Join-Path $curr 'LICENSE') -DestinationPath $destZip -Force;" ^
   "Write-Host 'Tamamlandi! XyfionVid-Portable.zip hazir!';"
 
 echo.
