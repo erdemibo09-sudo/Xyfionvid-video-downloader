@@ -4,45 +4,43 @@ setlocal
 cd /d "%~dp0"
 title XyfionVid - Tarayıcı Eklentisi Kurulum Rehberi
 
+set "MANIFEST_PATH=%~dp0extension\manifest.json"
 set "EXT_DIR=%~dp0extension"
 
-:: Eklenti klasör yolunu panoya kopyala
-powershell -NoProfile -Command "Set-Clipboard -Value '%EXT_DIR%'"
+:: manifest.json yolunu panoya kopyala
+powershell -NoProfile -Command "Set-Clipboard -Value '%MANIFEST_PATH%'"
 
 cls
 echo ==============================================================
-echo   ⚡ XyfionVid - Tarayıcı Eklentisi Kurulum Rehberi
+echo   ⚡ XyfionVid - Tarayıcı Eklentisi Kurulumu
 echo ==============================================================
 echo.
-echo   [OK] Eklenti klasör yolu panonuza kopyalandı!
-echo   [OK] Eklenti klasörü dosya gezgininde açıldı.
+echo   [OK] Eklenti dosya yolu PANONUZA KOPYALANDI!
+echo        (%MANIFEST_PATH%)
 echo.
-echo   Tarayıcınız açıldığında yapmanız gereken SADECE 2 ADIM VAR:
+echo   Hangi tarayıcıyı kullanıyorsunuz?
 echo.
-echo   YÖNTEM A (En Kolayı - Sürükle ve Bırak):
-echo   --------------------------------------------------------------
-echo   1. Tarayıcıda sol menüdeki "Geliştirici Modu" anahtarını AÇIN.
-echo   2. Ekranda açılan "extension" klasörünü farenizle tutup
-echo      tarayıcının içine SÜRÜKLEYİP BIRAKIN! (Anında kurulur)
+echo   [1] FIREFOX KULLANIYORSANIZ:
+echo   ------------------------------------------------------------
+echo   1. Açılan Firefox sekmesinde "Geçici Eklenti Yükle..." butonuna basın.
+echo   2. Açılan dosya kutusunda Dosya Adı kısmına CTRL + V yapıp
+echo      "Aç" deyin (veya extension\manifest.json dosyasını seçin).
+echo   ✓ İmza hatası vermeden anında yüklenir!
 echo.
-echo   YÖNTEM B (Klasik Yol):
-echo   --------------------------------------------------------------
+echo   [2] CHROME / EDGE KULLANIYORSANIZ:
+echo   ------------------------------------------------------------
 echo   1. "Geliştirici Modu" anahtarını açın.
-echo   2. "Paketlenmemiş öğe yükle" butonuna basın.
-echo   3. Açılan kutuda CTRL + V yapıp "Klasör Seç" deyin.
+echo   2. "Paketlenmemiş öğe yükle" deyip "extension" klasörünü seçin.
 echo.
 echo ==============================================================
 echo.
 
-:: Eklenti klasörünü gezginde aç
-start "" explorer.exe /select,"%EXT_DIR%"
-
-:: Tarayıcıyı eklentiler sayfasına yönlendir
-where msedge >nul 2>nul
-if %errorlevel% equ 0 (
-    start "" "msedge.exe" "edge://extensions"
+:: Kullanıcıya tarayıcı seçtir veya otomatik aç
+choice /c FE /m "Firefox için [F], Edge/Chrome için [E] tuşuna basın"
+if %errorlevel% equ 1 (
+    start "" "firefox.exe" "about:debugging#/runtime/this-firefox"
 ) else (
-    start "" "chrome.exe" "chrome://extensions"
+    start "" "msedge.exe" "edge://extensions"
 )
 
 pause
