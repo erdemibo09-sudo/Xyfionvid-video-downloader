@@ -143,8 +143,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     chrome.runtime.sendMessage(
       {
         action: "DOWNLOAD_MEDIA",
+        tabId: currentTabId,
         videoUrl: url,
-        title: title || currentTabTitle,
+        title: (title && title !== "Service" && title !== "Web Videosu") ? title : currentTabTitle,
         pageUrl: customPageUrl || currentTabUrl,
         formatType: formatType,
         quality: "best",

@@ -270,6 +270,50 @@ function isDirectStreamUrl(rawUrl: string): boolean {
   return /(\.(m3u8|mpd|mp4|webm|mkv|m4a|flv)(\?.*|#.*)?$|\/(master|playlist|index|manifest|sublist|chunklist)[^/?#]*\.txt(\?.*|#.*)?$)/i.test(rawUrl);
 }
 
+interface NetworkHeaderOpts {
+  pageUrl?: string;
+  origin?: string;
+  userAgent?: string;
+  cookie?: string;
+  hasCapturedHeaders?: boolean;
+}
+
+function applyYtDlpNetworkArgs(args: string[], opts: NetworkHeaderOpts) {
+  if (ffmpegBinDir) {
+    args.push("--ffmpeg-location", ffmpegBinDir);
+  }
+
+  const ua = opts.userAgent || "";
+  let impersonateTarget = "chrome";
+  if (ua.includes("Firefox/") || (!ua && cookieBrowser === "firefox")) {
+    impersonateTarget = "firefox";
+  }
+  args.push("--impersonate", impersonateTarget);
+
+  if (opts.cookie) {
+    args.push("--add-header", `Cookie:${opts.cookie}`);
+  } else if (cookieBrowser) {
+    args.push("--cookies-from-browser", cookieBrowser);
+  }
+
+  if (ua) {
+    args.push("--user-agent", ua);
+  }
+
+  if (opts.pageUrl) {
+    args.push("--referer", opts.pageUrl);
+  }
+
+  if (opts.origin) {
+    args.push("--add-header", `Origin:${opts.origin}`);
+  } else if (opts.pageUrl && !opts.hasCapturedHeaders) {
+    try {
+      const origin = new URL(opts.pageUrl).origin;
+      args.push("--add-header", `Origin:${origin}`);
+    } catch {}
+  }
+}
+
 async function handleRequest(req: Request): Promise<Response> {
   const url = new URL(req.url);
   console.log(`[${new Date().toLocaleTimeString("tr-TR")}] ${req.method} ${url.pathname}`);
@@ -300,7 +344,7 @@ async function handleRequest(req: Request): Promise<Response> {
   // 2. Video Bilgisi Getirme (POST /api/info)
   if (url.pathname === "/api/info" && req.method === "POST") {
     try {
-      const { videoUrl, pageUrl = "", userAgent = "" } = await req.json();
+      const { videoUrl, pageUrl = "", origin = "", userAgent = "", cookie = "", hasCapturedHeaders = false } = await req.json();
       if (!videoUrl || typeof videoUrl !== "string") {
         return new Response(JSON.stringify({ error: "Geçerli bir video URL adresi girin" }), {
           status: 400,
@@ -315,24 +359,7 @@ async function handleRequest(req: Request): Promise<Response> {
         "--skip-download",
         "--js-runtimes", `deno:${denoPath}`,
       ];
-      if (ffmpegBinDir) {
-        args.push("--ffmpeg-location", ffmpegBinDir);
-      }
-      if (cookieBrowser) {
-        args.push("--cookies-from-browser", cookieBrowser);
-      }
-
-      if (userAgent) {
-        args.push("--user-agent", userAgent);
-      }
-
-      if (pageUrl) {
-        args.push("--referer", pageUrl);
-        try {
-          const origin = new URL(pageUrl).origin;
-          args.push("--add-header", `Origin:${origin}`);
-        } catch {}
-      }
+      applyYtDlpNetworkArgs(args, { pageUrl, origin, userAgent, cookie, hasCapturedHeaders });
       args.push(videoUrl);
 
       const cmd = new Deno.Command(ytDlpPath, {
@@ -394,7 +421,18 @@ async function handleRequest(req: Request): Promise<Response> {
   if (url.pathname === "/api/download" && req.method === "POST") {
     try {
       const body = await req.json();
-      const { videoUrl, formatType = "mp4", quality = "best", title = "", subtitles = false, pageUrl = "", userAgent = "" } = body;
+      const {
+        videoUrl,
+        formatType = "mp4",
+        quality = "best",
+        title = "",
+        subtitles = false,
+        pageUrl = "",
+        origin = "",
+        userAgent = "",
+        cookie = "",
+        hasCapturedHeaders = false,
+      } = body;
 
       if (!videoUrl) {
         return new Response(JSON.stringify({ error: "URL gerekli" }), {
@@ -444,25 +482,7 @@ async function handleRequest(req: Request): Promise<Response> {
         "download:NOVAPROG:%(progress._percent_str)s|%(progress._speed_str)s|%(progress._eta_str)s|%(progress._total_bytes_str)s|%(progress._downloaded_bytes_str)s",
       ];
 
-      if (ffmpegBinDir) {
-        args.push("--ffmpeg-location", ffmpegBinDir);
-      }
-
-      if (cookieBrowser) {
-        args.push("--cookies-from-browser", cookieBrowser);
-      }
-
-      if (userAgent) {
-        args.push("--user-agent", userAgent);
-      }
-
-      if (pageUrl) {
-        args.push("--referer", pageUrl);
-        try {
-          const origin = new URL(pageUrl).origin;
-          args.push("--add-header", `Origin:${origin}`);
-        } catch {}
-      }
+      applyYtDlpNetworkArgs(args, { pageUrl, origin, userAgent, cookie, hasCapturedHeaders });
 
       const genericTitles = new Set(["", "video indiriliyor...", "web videosu", "service", "embed", "player", "video", "untitled"]);
       const cleanedTitle = sanitizeFileTitle(title);
@@ -707,6 +727,7 @@ async function handleRequest(req: Request): Promise<Response> {
             const errorLines = rawErr.split("\n").filter(l => l.includes("ERROR:") || (!l.includes("WARNING:") && l.trim()));
             job.error = errorLines.pop() || rawErr || "İndirme sırasında bir hata oluştu";
           }
+          console.error(`[DL ERROR] ${job.id}: ${job.error}`);
           notifyJob(job);
         }
       })();

@@ -125,12 +125,32 @@ function detectMediaType(url, contentType = "") {
 
 // Sıralı işlem kuyruğu (aynı tabId için eşzamanlı yazma çakışmasını önler)
 const tabLocks = new Map();
+const capturedHeaders = new Map(); // cleanUrl -> { referer, origin, userAgent, cookie }
 
 function enqueueTabTask(tabId, fn) {
   const prev = tabLocks.get(tabId) || Promise.resolve();
   const next = prev.then(fn, fn);
   tabLocks.set(tabId, next);
   return next;
+}
+
+function recordRequestHeaders(rawUrl, requestHeaders) {
+  if (!requestHeaders || !isCandidateMediaUrl(rawUrl)) return;
+  const cleanUrl = cleanMediaUrl(rawUrl);
+  const hdr = { referer: "", origin: "", userAgent: "", cookie: "" };
+  for (const h of requestHeaders) {
+    if (!h || !h.name) continue;
+    const name = h.name.toLowerCase();
+    if (name === "referer") hdr.referer = h.value || "";
+    else if (name === "origin") hdr.origin = h.value || "";
+    else if (name === "user-agent") hdr.userAgent = h.value || "";
+    else if (name === "cookie") hdr.cookie = h.value || "";
+  }
+  capturedHeaders.set(cleanUrl, hdr);
+  if (capturedHeaders.size > 200) {
+    const firstKey = capturedHeaders.keys().next().value;
+    if (firstKey) capturedHeaders.delete(firstKey);
+  }
 }
 
 // 1. Ağ Trafiğini Dinle (onBeforeRequest)
@@ -145,6 +165,26 @@ chrome.webRequest.onBeforeRequest.addListener(
   },
   { urls: ["<all_urls>"] }
 );
+
+// 1.1 Gerçek HTTP Başlıklarını Yakala (Referer, Origin, User-Agent, Cookie)
+function onBeforeSendHeadersHandler(details) {
+  if (details.tabId < 0 || details.method !== "GET") return;
+  recordRequestHeaders(details.url, details.requestHeaders);
+}
+
+try {
+  chrome.webRequest.onBeforeSendHeaders.addListener(
+    onBeforeSendHeadersHandler,
+    { urls: ["<all_urls>"] },
+    ["requestHeaders", "extraHeaders"]
+  );
+} catch {
+  chrome.webRequest.onBeforeSendHeaders.addListener(
+    onBeforeSendHeadersHandler,
+    { urls: ["<all_urls>"] },
+    ["requestHeaders"]
+  );
+}
 
 // 2. Yanıt Başlıklarını Dinle (MIME Type üzerinden medya yakalama)
 chrome.webRequest.onResponseStarted.addListener(
@@ -207,10 +247,12 @@ function registerMedia(tabId, rawUrl, contentType = "", referer = "", explicitTi
     } catch {}
     if (!tabTitle) tabTitle = "Web Videosu";
 
+    const liveHeaders = capturedHeaders.get(url) || {};
     const mediaItem = {
       id: "media_" + Date.now() + "_" + Math.random().toString(36).substring(2, 6),
       url,
-      pageUrl: tabPageUrl || "",
+      pageUrl: liveHeaders.referer || tabPageUrl || "",
+      headers: liveHeaders,
       title: tabTitle,
       type: mediaType,
       detectedAt: new Date().toLocaleTimeString("tr-TR"),
@@ -304,8 +346,9 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
   if (request.action === "DOWNLOAD_MEDIA") {
     (async () => {
-      let { videoUrl, title, formatType = "mp4", quality = "best", pageUrl = "" } = request;
-      const tabId = sender?.tab?.id;
+      let { videoUrl, title, formatType = "mp4", quality = "best", pageUrl = "", tabId: explicitTabId } = request;
+      const tabId = typeof sender?.tab?.id === "number" ? sender.tab.id : explicitTabId;
+      let storedItem = null;
 
       if (typeof tabId === "number" && tabId >= 0) {
         const pendingLock = tabLocks.get(tabId);
@@ -314,14 +357,15 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         }
 
         const genericTitles = new Set(["", "service", "embed", "player", "video", "untitled", "web videosu"]);
-        if (sender.tab.title && (!title || genericTitles.has(title.trim().toLowerCase()))) {
+        if (sender?.tab?.title && (!title || genericTitles.has(title.trim().toLowerCase()))) {
           title = sender.tab.title.trim();
         }
 
+        const list = await getTabMedia(tabId);
         if (!videoUrl || videoUrl.startsWith("blob:")) {
-          const list = await getTabMedia(tabId);
           const preferred = list.find((m) => m.type.includes("HLS") || m.type.includes("MP4") || m.type.includes("DASH")) || list[0];
           if (preferred) {
+            storedItem = preferred;
             videoUrl = preferred.url;
             if (preferred.pageUrl) pageUrl = preferred.pageUrl;
             if (preferred.title && (!title || genericTitles.has(title.trim().toLowerCase()))) {
@@ -330,8 +374,22 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
           } else {
             throw new Error("Video akışı henüz yakalanamadı. Sağ üstteki XyfionVid eklenti ikonuna tıklayıp 'Tara' butonunu kullanın.");
           }
+        } else {
+          const cleaned = cleanMediaUrl(videoUrl);
+          storedItem = list.find((m) => m.url === cleaned) || null;
         }
       }
+
+      const cleanTargetUrl = cleanMediaUrl(videoUrl);
+      const memHeaders = capturedHeaders.get(cleanTargetUrl) || {};
+      const itemHeaders = (storedItem && storedItem.headers) || {};
+      const finalReferer = memHeaders.referer || itemHeaders.referer || pageUrl || "";
+      const finalOrigin = memHeaders.origin || itemHeaders.origin || "";
+      const finalUa = memHeaders.userAgent || itemHeaders.userAgent || (typeof navigator !== "undefined" ? navigator.userAgent : "");
+      const finalCookie = memHeaders.cookie || itemHeaders.cookie || "";
+      const hasCapturedHeaders = Boolean(
+        memHeaders.referer || memHeaders.origin || memHeaders.cookie || itemHeaders.referer || itemHeaders.origin || itemHeaders.cookie
+      );
 
       const res = await fetch(`${SERVER_URL}/api/download`, {
         method: "POST",
@@ -339,7 +397,11 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         body: JSON.stringify({
           videoUrl,
           title: title || "Web Videosu",
-          pageUrl,
+          pageUrl: finalReferer,
+          origin: finalOrigin,
+          userAgent: finalUa,
+          cookie: finalCookie,
+          hasCapturedHeaders,
           formatType,
           quality,
         }),
