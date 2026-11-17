@@ -123,10 +123,18 @@ try {
     Add-ZipFileEntry $archive $buildIdFile "build_id.txt"
     Add-ZipFileEntry $archive (Join-Path $rootDir "server.ts") "server.ts"
 
+    # Rebuild XyfionVid-Firefox.xpi from latest extension/ files
     $xpiPath = Join-Path $rootDir "XyfionVid-Firefox.xpi"
-    if (Test-Path $xpiPath) {
-        Add-ZipFileEntry $archive $xpiPath "XyfionVid-Firefox.xpi"
+    if (Test-Path $xpiPath) { Remove-Item $xpiPath -Force }
+    $xpiFs = [System.IO.File]::Open($xpiPath, [System.IO.FileMode]::Create)
+    $xpiZip = New-Object System.IO.Compression.ZipArchive($xpiFs, [System.IO.Compression.ZipArchiveMode]::Create)
+    try {
+        Add-ZipDir $xpiZip (Join-Path $rootDir "extension") ""
+    } finally {
+        $xpiZip.Dispose()
+        $xpiFs.Dispose()
     }
+    Add-ZipFileEntry $archive $xpiPath "XyfionVid-Firefox.xpi"
 
     Add-ZipDir $archive (Join-Path $rootDir "public") "public"
     Add-ZipDir $archive (Join-Path $rootDir "extension") "extension"
@@ -175,6 +183,8 @@ try {
 finally {
     $outStream.Dispose()
 }
+
+Remove-Item $payloadZip, $stubExe, $buildIdFile -Force -ErrorAction SilentlyContinue
 
 $finalSizeMB = [Math]::Round((Get-Item $finalExe).Length / 1MB, 2)
 Write-Host ""

@@ -326,3 +326,49 @@ body {
   color: #7dd3fc;
   text-decoration: underline;
 }
+
+.tab-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.btn-scan {
+  color: #38bdf8;
+}
+
+.btn-scan:hover {
+  color: #7dd3fc;
+}
+
+.permission-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 14px;
+  background: rgba(245, 158, 11, 0.15);
+  border-bottom: 1px solid rgba(245, 158, 11, 0.35);
+  color: #fde68a;
+  font-size: 11px;
+}
+
+.permission-banner.hidden {
+  display: none;
+}
+
+.btn-perm {
+  flex-shrink: 0;
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: none;
+  background: #f59e0b;
+  color: #090d16;
+  font-weight: 700;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.btn-perm:hover {
+  background: #fbbf24;
+}

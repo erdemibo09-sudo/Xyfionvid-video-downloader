@@ -22,12 +22,21 @@
       </div>
     </header>
 
+    <!-- İzin Uyarısı (Firefox MV3 için eksikse gösterilir) -->
+    <div class="permission-banner hidden" id="permissionBanner">
+      <span>⚠️ Firefox için tüm sitelerde video algılama izni gerekli.</span>
+      <button id="btnGrantPermission" class="btn-perm" type="button">🔓 İzin Ver</button>
+    </div>
+
     <!-- Geçerli Sekme Bilgisi -->
     <div class="tab-info-card">
       <div class="tab-title" id="tabTitle">Geçerli Sayfa</div>
       <div class="tab-stats">
         <span class="badge" id="mediaCountBadge">0 Video Algılandı</span>
-        <button class="btn-text" id="btnClearMedia" title="Listeyi temizle">Temizle</button>
+        <div class="tab-actions">
+          <button class="btn-text btn-scan" id="btnRescanMedia" title="Sayfayı ve iframe oynatıcıları tekrar tara">🔄 Tara</button>
+          <button class="btn-text" id="btnClearMedia" title="Listeyi temizle">Temizle</button>
+        </div>
       </div>
     </div>
 
@@ -37,7 +46,7 @@
       <div class="empty-state" id="emptyState">
         <div class="radar-pulse">📡</div>
         <h3>Henüz video algılanmadı</h3>
-        <p>Sayfadaki video oynatıcıda <b>"Oynat" (Play)</b> butonuna basın. Video akışı başladığında burada anında listelenecektir.</p>
+        <p>Eklentiyi yeni kurduysanız sayfayı <b>F5 ile yenileyip</b> videoda <b>"Oynat" (Play)</b> butonuna basın. Akış başladığında burada görünecektir.</p>
       </div>
     </main>
 

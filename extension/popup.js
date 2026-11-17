@@ -8,10 +8,33 @@ document.addEventListener("DOMContentLoaded", async () => {
   const mediaList = document.getElementById("mediaList");
   const emptyState = document.getElementById("emptyState");
   const btnClearMedia = document.getElementById("btnClearMedia");
+  const btnRescanMedia = document.getElementById("btnRescanMedia");
+  const permissionBanner = document.getElementById("permissionBanner");
+  const btnGrantPermission = document.getElementById("btnGrantPermission");
 
   let currentTabId = null;
   let currentTabTitle = "Web Videosu";
   let currentTabUrl = "";
+
+  // 0. Firefox MV3 tüm siteler izni kontrolü
+  if (chrome.permissions && chrome.permissions.contains && permissionBanner) {
+    chrome.permissions.contains({ origins: ["<all_urls>"] }, (hasPerm) => {
+      if (!hasPerm) {
+        permissionBanner.classList.remove("hidden");
+      }
+    });
+
+    if (btnGrantPermission) {
+      btnGrantPermission.addEventListener("click", () => {
+        chrome.permissions.request({ origins: ["<all_urls>"] }, (granted) => {
+          if (granted) {
+            permissionBanner.classList.add("hidden");
+            triggerTabScan();
+          }
+        });
+      });
+    }
+  }
 
   // 1. Aktif sekmeyi tespit et
   const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
@@ -29,8 +52,8 @@ document.addEventListener("DOMContentLoaded", async () => {
       statusText.textContent = "Sunucu Aktif";
     } else {
       statusDot.className = "status-dot offline";
-      statusText.textContent = "Sunucu Kapalı (Start.bat)";
-      statusText.title = "XyfionVid masaüstü uygulaması açık değil. Lütfen Start.bat'ı çalıştırın.";
+      statusText.textContent = "Sunucu Kapalı (XyfionVid)";
+      statusText.title = "XyfionVid masaüstü uygulaması açık değil. Lütfen XyfionVid.exe veya Start.bat'ı çalıştırın.";
     }
   });
 
@@ -42,6 +65,16 @@ document.addEventListener("DOMContentLoaded", async () => {
       const items = response?.media || [];
       renderMedia(items);
     });
+  }
+
+  function triggerTabScan() {
+    if (!currentTabId) return;
+    try {
+      chrome.tabs.sendMessage(currentTabId, { action: "SCAN_PAGE_MEDIA" }, () => {
+        void chrome.runtime.lastError;
+      });
+    } catch {}
+    setTimeout(loadMediaList, 250);
   }
 
   function renderMedia(items) {
@@ -125,12 +158,19 @@ document.addEventListener("DOMContentLoaded", async () => {
             buttonEl.style.background = "";
           }, 3000);
         } else {
-          alert("Hata: " + (res?.error || "Masaüstü sunucusuna bağlanılamadı. Lütfen Start.bat dosyasını açın."));
+          alert("Hata: " + (res?.error || "Masaüstü sunucusuna bağlanılamadı. Lütfen XyfionVid uygulamasını açın."));
           buttonEl.disabled = false;
           buttonEl.textContent = originalText;
         }
       }
     );
+  }
+
+  // Tara Butonu
+  if (btnRescanMedia) {
+    btnRescanMedia.addEventListener("click", () => {
+      triggerTabScan();
+    });
   }
 
   // Temizle Butonu
@@ -147,4 +187,5 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   loadMediaList();
+  triggerTabScan();
 });

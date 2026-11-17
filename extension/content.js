@@ -66,6 +66,7 @@
         {
           action: "DOWNLOAD_MEDIA",
           videoUrl: videoSrc,
+          pageUrl: window.location.href,
           title: title,
           formatType: "mp4",
           quality: "best",
@@ -113,10 +114,57 @@
     subtree: true,
   });
 
+  // DOM <video> etiketleri ve önceden yüklenmiş kaynakları (performance API) tara
+  function collectMediaFromFrame() {
+    const found = new Set();
+    const pageUrl = window.location.href;
+    const title = document.title || "";
+
+    document.querySelectorAll("video").forEach((v) => {
+      if (v.currentSrc && !v.currentSrc.startsWith("blob:")) found.add(v.currentSrc);
+      if (v.src && !v.src.startsWith("blob:")) found.add(v.src);
+      v.querySelectorAll("source").forEach((s) => {
+        if (s.src && !s.src.startsWith("blob:")) found.add(s.src);
+      });
+    });
+
+    try {
+      const entries = performance.getEntriesByType("resource") || [];
+      for (const entry of entries) {
+        if (entry && entry.name && entry.name.startsWith("http")) {
+          found.add(entry.name);
+        }
+      }
+    } catch {}
+
+    if (found.size > 0) {
+      const items = Array.from(found).map((url) => ({ url, pageUrl }));
+      try {
+        chrome.runtime.sendMessage({ action: "REGISTER_DOM_MEDIA", items, title }, () => {
+          void chrome.runtime.lastError;
+        });
+      } catch {}
+    }
+    return found.size;
+  }
+
+  chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    if (request.action === "SCAN_PAGE_MEDIA") {
+      scanVideos();
+      const count = collectMediaFromFrame();
+      sendResponse({ scanned: count });
+      return true;
+    }
+  });
+
   // İlk tarama
   if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", scanVideos);
+    document.addEventListener("DOMContentLoaded", () => {
+      scanVideos();
+      collectMediaFromFrame();
+    });
   } else {
     scanVideos();
+    collectMediaFromFrame();
   }
 })();

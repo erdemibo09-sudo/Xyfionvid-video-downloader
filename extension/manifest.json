@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "XyfionVid — Video Yakalayıcı ve İndirici",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Web sayfalarında oynatılan HLS, DASH, MP4 medya akışlarını anında algılar ve tek tıkla XyfionVid Masaüstü uygulamasına aktarır.",
   "icons": {
     "16": "icons/icon16.png",
@@ -35,6 +35,7 @@
       "matches": ["<all_urls>"],
       "js": ["content.js"],
       "css": ["content.css"],
+      "all_frames": true,
       "run_at": "document_end"
     }
   ],
