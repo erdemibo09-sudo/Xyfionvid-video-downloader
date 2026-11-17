@@ -9,6 +9,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   const emptyState = document.getElementById("emptyState");
   const btnClearMedia = document.getElementById("btnClearMedia");
   const btnRescanMedia = document.getElementById("btnRescanMedia");
+  const btnOpenDesktopApp = document.getElementById("btnOpenDesktopApp");
   const permissionBanner = document.getElementById("permissionBanner");
   const btnGrantPermission = document.getElementById("btnGrantPermission");
 
@@ -180,6 +181,19 @@ document.addEventListener("DOMContentLoaded", async () => {
       renderMedia([]);
     });
   });
+
+  // Masaüstü Uygulamasını Aç Butonu (.exe öne getir / kapalıysa xyfionvid:// ile aç)
+  if (btnOpenDesktopApp) {
+    btnOpenDesktopApp.addEventListener("click", () => {
+      chrome.runtime.sendMessage({ action: "OPEN_DESKTOP_APP" }, (res) => {
+        if (res && res.success) {
+          window.close();
+        } else {
+          chrome.tabs.create({ url: "xyfionvid://open", active: true });
+        }
+      });
+    });
+  }
 
   function escapeHtml(str) {
     if (!str) return "";

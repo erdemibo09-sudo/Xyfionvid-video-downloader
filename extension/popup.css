@@ -372,3 +372,10 @@ body {
 .btn-perm:hover {
   background: #fbbf24;
 }
+
+.footer-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+}

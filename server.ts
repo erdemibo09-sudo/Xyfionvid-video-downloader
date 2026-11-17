@@ -1112,7 +1112,53 @@ async function handleRequest(req: Request): Promise<Response> {
     }
   }
 
-  // 9.3. Temiz Kapatma (POST /api/shutdown)
+  // 9.3. Masaüstü Uygulamasını Öne Getir / Aç (POST /api/focus)
+  if (url.pathname === "/api/focus" && req.method === "POST") {
+    try {
+      let exePath = Deno.env.get("XYFIONVID_EXE_PATH") || "";
+      if (!exePath) {
+        const localAppData = Deno.env.get("LOCALAPPDATA") || "";
+        if (localAppData) {
+          try {
+            exePath = Deno.readTextFileSync(`${localAppData}\\XyfionVid\\exe_path.txt`).trim();
+          } catch {}
+        }
+      }
+
+      let hasExe = false;
+      if (exePath) {
+        try {
+          hasExe = Deno.statSync(exePath).isFile;
+        } catch {}
+      }
+
+      if (hasExe) {
+        new Deno.Command(exePath, { stdout: "null", stderr: "null" }).spawn();
+        return new Response(JSON.stringify({ success: true, mode: "exe" }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      const appUrl = `http://localhost:${PORT}`;
+      const psScript = `Start-Process 'msedge.exe' -ArgumentList '--app=${appUrl}' -ErrorAction SilentlyContinue`;
+      new Deno.Command("powershell.exe", {
+        args: ["-NoProfile", "-NonInteractive", "-WindowStyle", "Hidden", "-Command", psScript],
+        stdout: "null",
+        stderr: "null",
+      }).spawn();
+
+      return new Response(JSON.stringify({ success: true, mode: "app-browser" }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    } catch (e: any) {
+      return new Response(JSON.stringify({ success: false, error: e.message }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+  }
+
+  // 9.4. Temiz Kapatma (POST /api/shutdown)
   if (url.pathname === "/api/shutdown" && req.method === "POST") {
     for (const job of jobs.values()) {
       if (job.process && (job.status === "starting" || job.status === "downloading" || job.status === "merging" || job.status === "extracting")) {

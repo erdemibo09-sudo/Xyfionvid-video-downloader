@@ -290,6 +290,14 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     return true;
   }
 
+  if (request.action === "OPEN_DESKTOP_APP") {
+    fetch(`${SERVER_URL}/api/focus`, { method: "POST" })
+      .then((res) => res.json())
+      .then((data) => sendResponse({ success: Boolean(data && data.success), data }))
+      .catch((err) => sendResponse({ success: false, error: err.message }));
+    return true;
+  }
+
   if (request.action === "DOWNLOAD_MEDIA") {
     (async () => {
       let { videoUrl, title, formatType = "mp4", quality = "best", pageUrl = "" } = request;

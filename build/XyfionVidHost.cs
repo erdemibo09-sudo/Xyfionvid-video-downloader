@@ -11,6 +11,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using System.Windows.Forms;
+using Microsoft.Win32;
 using Microsoft.Web.WebView2.Core;
 using Microsoft.Web.WebView2.WinForms;
 
@@ -541,6 +542,7 @@ namespace XyfionVidHost
             psi.StandardErrorEncoding = Encoding.UTF8;
             psi.EnvironmentVariables["XYFIONVID_EXE_MODE"] = "1";
             psi.EnvironmentVariables["XYFIONVID_PORT"] = Port.ToString();
+            psi.EnvironmentVariables["XYFIONVID_EXE_PATH"] = Assembly.GetExecutingAssembly().Location;
 
             denoProcess = new Process();
             denoProcess.StartInfo = psi;
@@ -978,8 +980,11 @@ namespace XyfionVidHost
                 this.WindowState = FormWindowState.Normal;
             }
             NativeMethods.ShowWindow(this.Handle, 9); // SW_RESTORE
-            this.Activate();
+            bool prevTop = this.TopMost;
+            this.TopMost = true;
             NativeMethods.SetForegroundWindow(this.Handle);
+            this.Activate();
+            this.TopMost = prevTop;
         }
 
         private void StartWakeupListener()
@@ -1051,8 +1056,38 @@ namespace XyfionVidHost
 
     internal static class Program
     {
+        private static void RegisterProtocolHandler(string exePath)
+        {
+            try
+            {
+                string dataDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "XyfionVid");
+                Directory.CreateDirectory(dataDir);
+                File.WriteAllText(Path.Combine(dataDir, "exe_path.txt"), exePath, Encoding.UTF8);
+
+                using (RegistryKey key = Registry.CurrentUser.CreateSubKey(@"Software\Classes\xyfionvid"))
+                {
+                    if (key != null)
+                    {
+                        key.SetValue("", "URL:XyfionVid Protocol");
+                        key.SetValue("URL Protocol", "");
+                        using (RegistryKey iconKey = key.CreateSubKey("DefaultIcon"))
+                        {
+                            if (iconKey != null) iconKey.SetValue("", string.Format("\"{0}\",0", exePath));
+                        }
+                        using (RegistryKey cmdKey = key.CreateSubKey(@"shell\open\command"))
+                        {
+                            if (cmdKey != null) cmdKey.SetValue("", string.Format("\"{0}\" \"%1\"", exePath));
+                        }
+                    }
+                }
+            }
+            catch
+            {
+            }
+        }
+
         [STAThread]
-        public static void Main()
+        public static void Main(string[] cmdArgs)
         {
             NativeMethods.SetProcessDPIAware();
             Application.EnableVisualStyles();
@@ -1069,6 +1104,7 @@ namespace XyfionVidHost
                 }
 
                 string exePath = Assembly.GetExecutingAssembly().Location;
+                RegisterProtocolHandler(exePath);
                 Icon appIcon = null;
                 try { appIcon = Icon.ExtractAssociatedIcon(exePath); } catch { }
 
