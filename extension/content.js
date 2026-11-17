@@ -24,19 +24,25 @@
 
   function attachDownloadBtn(videoEl) {
     if (videoEl.dataset.xyfionAttached) return;
+    const isIframe = window.self !== window.top;
+    if (isIframe && document.querySelector(".xyfion-dl-btn")) {
+      videoEl.dataset.xyfionAttached = "true";
+      return;
+    }
+
+    const hostContainer = isIframe ? (document.body || document.documentElement) : videoEl.parentElement;
+    if (!hostContainer) return;
     videoEl.dataset.xyfionAttached = "true";
 
-    const parent = videoEl.parentElement;
-    if (!parent) return;
-
-    // Ebeveyn kapsayıcının stilini kontrol et
-    const computedStyle = window.getComputedStyle(parent);
-    if (computedStyle.position === "static") {
-      parent.style.position = "relative";
+    if (!isIframe) {
+      const computedStyle = window.getComputedStyle(hostContainer);
+      if (computedStyle.position === "static") {
+        hostContainer.style.position = "relative";
+      }
     }
 
     const btn = document.createElement("button");
-    btn.className = "xyfion-dl-btn";
+    btn.className = isIframe ? "xyfion-dl-btn xyfion-dl-btn-fixed" : "xyfion-dl-btn";
     btn.type = "button";
     btn.title = "Bu videoyu XyfionVid Masaüstü uygulaması ile indir";
     btn.innerHTML = `
@@ -49,15 +55,26 @@
     `;
 
     // Video üzerine gelindiğinde düğmeyi netleştir
-    parent.addEventListener("mouseenter", () => btn.classList.add("active"));
-    parent.addEventListener("mouseleave", () => btn.classList.remove("active"));
+    hostContainer.addEventListener("mouseenter", () => btn.classList.add("active"));
+    hostContainer.addEventListener("mouseleave", () => btn.classList.remove("active"));
+
+    // Oynatıcının mousedown/pointerdown ile tıklamayı yutmasını engelle
+    ["pointerdown", "mousedown", "mouseup", "touchstart"].forEach((evt) => {
+      btn.addEventListener(evt, (e) => {
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+      }, true);
+    });
 
     btn.addEventListener("click", (e) => {
       e.preventDefault();
       e.stopPropagation();
+      e.stopImmediatePropagation();
 
-      const videoSrc = videoEl.currentSrc || videoEl.src || window.location.href;
-      const title = document.title || "Web Videosu";
+      collectMediaFromFrame();
+
+      const videoSrc = videoEl.currentSrc || videoEl.src || "blob:resolve";
+      const title = document.title || "";
 
       btn.querySelector("span").textContent = "Gönderiliyor...";
       btn.style.opacity = "1";
@@ -72,6 +89,7 @@
           quality: "best",
         },
         (response) => {
+          void chrome.runtime.lastError;
           if (response && response.success) {
             btn.querySelector("span").textContent = "✓ İletildi!";
             showToast("Video XyfionVid'e başarıyla iletildi!");
@@ -79,7 +97,7 @@
               btn.querySelector("span").textContent = "XyfionVid ile İndir";
             }, 3000);
           } else {
-            const err = response?.error || "Sunucuya bağlanılamadı. XyfionVid masaüstü uygulamasını açın.";
+            const err = response?.error || "Sunucuya bağlanılamadı. XyfionVid uygulamasını açın.";
             btn.querySelector("span").textContent = "Hata!";
             showToast(err, true);
             setTimeout(() => {
@@ -88,9 +106,9 @@
           }
         }
       );
-    });
+    }, true);
 
-    parent.appendChild(btn);
+    hostContainer.appendChild(btn);
   }
 
   // Sayfadaki mevcut video etiketlerini tara

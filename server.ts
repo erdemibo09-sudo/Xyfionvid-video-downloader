@@ -256,6 +256,20 @@ function formatDuration(seconds: number) {
   return h > 0 ? `${h}:${pad(m)}:${pad(s)}` : `${pad(m)}:${pad(s)}`;
 }
 
+function sanitizeFileTitle(raw: string): string {
+  return (raw || "")
+    .replace(/[<>:"/\\|?*%]/g, "")
+    .replace(/[\x00-\x1f]/g, "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/[. ]+$/g, "")
+    .slice(0, 120);
+}
+
+function isDirectStreamUrl(rawUrl: string): boolean {
+  return /(\.(m3u8|mpd|mp4|webm|mkv|m4a|flv)(\?.*|#.*)?$|\/(master|playlist|index|manifest|sublist|chunklist)[^/?#]*\.txt(\?.*|#.*)?$)/i.test(rawUrl);
+}
+
 async function handleRequest(req: Request): Promise<Response> {
   const url = new URL(req.url);
   console.log(`[${new Date().toLocaleTimeString("tr-TR")}] ${req.method} ${url.pathname}`);
@@ -450,7 +464,17 @@ async function handleRequest(req: Request): Promise<Response> {
         } catch {}
       }
 
-      args.push("-o", `${DOWNLOADS_DIR}\\%(title).180B [%(id)s].%(ext)s`);
+      const genericTitles = new Set(["", "video indiriliyor...", "web videosu", "service", "embed", "player", "video", "untitled"]);
+      const cleanedTitle = sanitizeFileTitle(title);
+      if (isDirectStreamUrl(videoUrl)) {
+        const uniqueTag = Date.now().toString(36).slice(-5) + Math.random().toString(36).substring(2, 5);
+        const baseName = cleanedTitle && !genericTitles.has(cleanedTitle.toLowerCase())
+          ? cleanedTitle
+          : "XyfionVid_Video";
+        args.push("-o", `${DOWNLOADS_DIR}\\${baseName} [${uniqueTag}].%(ext)s`);
+      } else {
+        args.push("-o", `${DOWNLOADS_DIR}\\%(title).180B [%(id)s].%(ext)s`);
+      }
 
       if (formatType === "mp3") {
         args.push("-x", "--audio-format", "mp3", "--audio-quality", "0");

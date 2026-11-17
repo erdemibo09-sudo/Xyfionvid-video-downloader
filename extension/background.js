@@ -187,7 +187,8 @@ function registerMedia(tabId, rawUrl, contentType = "", referer = "", explicitTi
     // Mükerrer URL kontrolü
     if (list.some((item) => item.url === url)) return;
 
-    let tabTitle = explicitTitle || "Web Videosu";
+    const genericTitles = new Set(["", "service", "embed", "player", "video", "untitled"]);
+    let tabTitle = explicitTitle && !genericTitles.has(explicitTitle.trim().toLowerCase()) ? explicitTitle.trim() : "";
     let tabPageUrl = referer;
 
     try {
@@ -198,10 +199,13 @@ function registerMedia(tabId, rawUrl, contentType = "", referer = "", explicitTi
         });
       });
       if (tab) {
-        if (!explicitTitle && tab.title) tabTitle = tab.title;
+        if (tab.title && !genericTitles.has(tab.title.trim().toLowerCase())) {
+          tabTitle = tab.title.trim();
+        }
         if (!tabPageUrl && tab.url) tabPageUrl = tab.url;
       }
     } catch {}
+    if (!tabTitle) tabTitle = "Web Videosu";
 
     const mediaItem = {
       id: "media_" + Date.now() + "_" + Math.random().toString(36).substring(2, 6),
@@ -301,16 +305,31 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === "DOWNLOAD_MEDIA") {
     (async () => {
       let { videoUrl, title, formatType = "mp4", quality = "best", pageUrl = "" } = request;
+      const tabId = sender?.tab?.id;
 
-      // Sayfa içi "blob:" linki gönderildiyse sekmede yakalanan gerçek akışı çöz
-      if (videoUrl && videoUrl.startsWith("blob:") && sender?.tab?.id >= 0) {
-        const list = await getTabMedia(sender.tab.id);
-        const preferred = list.find((m) => m.type.includes("HLS") || m.type.includes("MP4") || m.type.includes("DASH")) || list[0];
-        if (preferred) {
-          videoUrl = preferred.url;
-          if (!pageUrl && preferred.pageUrl) pageUrl = preferred.pageUrl;
-        } else if (pageUrl || sender.tab.url) {
-          videoUrl = pageUrl || sender.tab.url;
+      if (typeof tabId === "number" && tabId >= 0) {
+        const pendingLock = tabLocks.get(tabId);
+        if (pendingLock) {
+          try { await pendingLock; } catch {}
+        }
+
+        const genericTitles = new Set(["", "service", "embed", "player", "video", "untitled", "web videosu"]);
+        if (sender.tab.title && (!title || genericTitles.has(title.trim().toLowerCase()))) {
+          title = sender.tab.title.trim();
+        }
+
+        if (!videoUrl || videoUrl.startsWith("blob:")) {
+          const list = await getTabMedia(tabId);
+          const preferred = list.find((m) => m.type.includes("HLS") || m.type.includes("MP4") || m.type.includes("DASH")) || list[0];
+          if (preferred) {
+            videoUrl = preferred.url;
+            if (preferred.pageUrl) pageUrl = preferred.pageUrl;
+            if (preferred.title && (!title || genericTitles.has(title.trim().toLowerCase()))) {
+              title = preferred.title;
+            }
+          } else {
+            throw new Error("Video akışı henüz yakalanamadı. Sağ üstteki XyfionVid eklenti ikonuna tıklayıp 'Tara' butonunu kullanın.");
+          }
         }
       }
 
