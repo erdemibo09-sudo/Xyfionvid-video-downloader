@@ -1,20 +1,31 @@
 // XyfionVid - Ultra HD Video Downloader & Converter (Deno Backend - Zero Dependencies)
 
-const PORT = 3000;
+const PORT = parseInt(Deno.env.get("XYFIONVID_PORT") || "3000", 10) || 3000;
 const ROOT_DIR = Deno.cwd();
 const PUBLIC_DIR = `${ROOT_DIR}\\public`;
 
 // Windows uyumluluğu için temiz downloads yolu (Türkçe karakter ve Explorer takılmalarını önler)
 const userProfile = Deno.env.get("USERPROFILE") || "";
+const customDownloads = Deno.env.get("XYFIONVID_DOWNLOADS_DIR") || "";
+const isExeMode = Deno.env.get("XYFIONVID_EXE_MODE") === "1";
+
 let DOWNLOADS_DIR = `${ROOT_DIR}\\downloads`;
-if (userProfile) {
+if (customDownloads) {
+  DOWNLOADS_DIR = customDownloads;
+} else if (userProfile) {
   const xyfionPath = `${userProfile}\\Desktop\\XyfionVid\\downloads`;
+  let foundExistingDesktop = false;
   try {
     if (Deno.statSync(xyfionPath).isDirectory) {
       DOWNLOADS_DIR = xyfionPath;
+      foundExistingDesktop = true;
     }
   } catch {
-    // fallback to ROOT_DIR\\downloads
+    // devam et
+  }
+
+  if (!foundExistingDesktop && isExeMode) {
+    DOWNLOADS_DIR = `${userProfile}\\Downloads\\XyfionVid`;
   }
 }
 
@@ -275,7 +286,7 @@ async function handleRequest(req: Request): Promise<Response> {
   // 2. Video Bilgisi Getirme (POST /api/info)
   if (url.pathname === "/api/info" && req.method === "POST") {
     try {
-      const { videoUrl } = await req.json();
+      const { videoUrl, pageUrl = "", userAgent = "" } = await req.json();
       if (!videoUrl || typeof videoUrl !== "string") {
         return new Response(JSON.stringify({ error: "Geçerli bir video URL adresi girin" }), {
           status: 400,
@@ -856,7 +867,7 @@ async function handleRequest(req: Request): Promise<Response> {
       }
 
       new Deno.Command("powershell.exe", {
-        args: ["-NoProfile", "-NonInteractive", "-Command", psScript],
+        args: ["-NoProfile", "-NonInteractive", "-WindowStyle", "Hidden", "-Command", psScript],
         stdout: "null",
         stderr: "null",
       }).spawn();
@@ -885,7 +896,7 @@ async function handleRequest(req: Request): Promise<Response> {
           }
         `;
         new Deno.Command("powershell.exe", {
-          args: ["-NoProfile", "-NonInteractive", "-Command", psScript],
+          args: ["-NoProfile", "-NonInteractive", "-WindowStyle", "Hidden", "-Command", psScript],
           stdout: "null",
           stderr: "null",
         }).spawn();
@@ -1030,6 +1041,96 @@ async function handleRequest(req: Request): Promise<Response> {
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
+  }
+
+  // 9.1. Tarayıcı Eklentisi Bilgisi (GET /api/extension-info)
+  if (url.pathname === "/api/extension-info" && req.method === "GET") {
+    const extensionDir = `${ROOT_DIR}\\extension`;
+    const manifestPath = `${extensionDir}\\manifest.json`;
+    const xpiPath = `${ROOT_DIR}\\XyfionVid-Firefox.xpi`;
+    let hasExtension = false;
+    let hasXpi = false;
+    try {
+      hasExtension = Deno.statSync(manifestPath).isFile;
+    } catch {}
+    try {
+      hasXpi = Deno.statSync(xpiPath).isFile;
+    } catch {}
+
+    return new Response(
+      JSON.stringify({
+        available: hasExtension,
+        extensionDir,
+        manifestPath,
+        xpiPath: hasXpi ? xpiPath : "",
+      }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+
+  // 9.2. Tarayıcı Eklentisini Hazırla / Aç (POST /api/open-extension)
+  if (url.pathname === "/api/open-extension" && req.method === "POST") {
+    try {
+      const body = await req.json().catch(() => ({}));
+      const target = (body.target as string) || "folder";
+      const extensionDir = `${ROOT_DIR}\\extension`;
+      const manifestPath = `${extensionDir}\\manifest.json`;
+
+      const clipboardTarget = target === "firefox" ? manifestPath : extensionDir;
+      let psScript = `Set-Clipboard -Value '${clipboardTarget.replace(/'/g, "''")}';`;
+
+      if (target === "firefox") {
+        psScript += ` Start-Process 'firefox.exe' -ArgumentList 'about:debugging#/runtime/this-firefox' -ErrorAction SilentlyContinue;`;
+      } else if (target === "edge") {
+        psScript += ` Start-Process 'msedge.exe' -ArgumentList 'edge://extensions' -ErrorAction SilentlyContinue;`;
+      } else if (target === "chrome") {
+        psScript += ` Start-Process 'chrome.exe' -ArgumentList 'chrome://extensions' -ErrorAction SilentlyContinue;`;
+      } else {
+        psScript += ` Start-Process 'explorer.exe' -ArgumentList '"${extensionDir.replace(/'/g, "''")}"';`;
+      }
+
+      new Deno.Command("powershell.exe", {
+        args: ["-NoProfile", "-NonInteractive", "-WindowStyle", "Hidden", "-Command", psScript],
+        stdout: "null",
+        stderr: "null",
+      }).spawn();
+
+      return new Response(
+        JSON.stringify({
+          success: true,
+          copiedPath: clipboardTarget,
+          extensionDir,
+          manifestPath,
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    } catch (e: any) {
+      return new Response(JSON.stringify({ error: e.message }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+  }
+
+  // 9.3. Temiz Kapatma (POST /api/shutdown)
+  if (url.pathname === "/api/shutdown" && req.method === "POST") {
+    for (const job of jobs.values()) {
+      if (job.process && (job.status === "starting" || job.status === "downloading" || job.status === "merging" || job.status === "extracting")) {
+        try {
+          const pid = job.process.pid;
+          new Deno.Command("taskkill", {
+            args: ["/F", "/T", "/PID", pid.toString()],
+            stdout: "null",
+            stderr: "null",
+          }).spawn();
+          job.status = "cancelled";
+        } catch {}
+      }
+    }
+    setTimeout(() => Deno.exit(0), 100);
+    return new Response(JSON.stringify({ success: true }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
 
   // 10. Statik Dosyalar

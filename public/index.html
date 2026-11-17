@@ -38,6 +38,12 @@
           <span class="status-dot"></span>
           <span>Motorlar Hazır</span>
         </div>
+        <button id="btnOpenExtensionModal" class="btn btn-secondary btn-icon-text" title="Tarayıcı Eklentisi Kurulumu">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path>
+          </svg>
+          <span>Tarayıcı Eklentisi</span>
+        </button>
         <button id="btnOpenDownloadsTop" class="btn btn-secondary btn-icon-text">
           <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
@@ -530,7 +536,7 @@
         <div class="guide-box">
           <h3>💡 İpuçları</h3>
           <ul>
-            <li><strong>En Yüksek Kalite:</strong> Birçok modern video sitesi 1080p ve 4K videoları ayrı ses ve görüntü kanalı olarak sunar. NovaVid bu iki kanalı FFmpeg motoru sayesinde tek bir kayıpsız MP4 dosyasında birleştirir.</li>
+            <li><strong>En Yüksek Kalite:</strong> Birçok modern video sitesi 1080p ve 4K videoları ayrı ses ve görüntü kanalı olarak sunar. XyfionVid bu iki kanalı FFmpeg motoru sayesinde tek bir kayıpsız MP4 dosyasında birleştirir.</li>
             <li><strong>Sadece Müzik:</strong> Videolardan müzik veya ses kaydetmek için format seçiminden "MP3 (320 kbps)" seçeneğini işaretlemeniz yeterlidir.</li>
             <li><strong>Yerel Dosyalar:</strong> Elinizdeki MKV veya WebM gibi açılmayan videoları "Dosya Dönüştürücü" sekmesinden anında MP4 formatına çevirebilirsiniz.</li>
           </ul>
@@ -563,6 +569,52 @@
     </div>
   </div>
 
-  <script src="app.js?v=3.0"></script>
+  <!-- Tarayıcı Eklentisi Kurulum Modalı -->
+  <div id="extensionModal" class="media-modal hidden">
+    <div class="media-modal-backdrop" id="extensionModalBackdrop"></div>
+    <div class="media-modal-card" style="max-width: 640px;">
+      <div class="media-modal-header">
+        <h3>🧩 XyfionVid Tarayıcı Eklentisi Kurulumu</h3>
+        <button id="btnCloseExtensionModal" class="btn-close-modal" type="button" title="Kapat">✕</button>
+      </div>
+      <div class="ext-modal-content">
+        <p class="ext-desc">Herhangi bir web sayfasındaki video akışını (HLS / MP4 / Embed) tarayıcınızdan tek tıkla XyfionVid masaüstü uygulamasına göndermek için tarayıcınızı seçin:</p>
+        <div class="ext-path-box">
+          <span class="ext-path-label">Eklenti Klasörü:</span>
+          <code id="extPathPreview">Yükleniyor...</code>
+        </div>
+        <div class="ext-browser-grid">
+          <button id="btnExtFirefox" class="ext-browser-btn" type="button">
+            <span class="ext-ico">🦊</span>
+            <div>
+              <strong>Firefox'a Yükle</strong>
+              <small>about:debugging açılır, manifest.json yolu kopyalanır</small>
+            </div>
+          </button>
+          <button id="btnExtEdge" class="ext-browser-btn" type="button">
+            <span class="ext-ico">🌐</span>
+            <div>
+              <strong>Microsoft Edge'e Yükle</strong>
+              <small>Geliştirici Modu -> Paketlenmemiş öğe yükle (CTRL+V)</small>
+            </div>
+          </button>
+          <button id="btnExtChrome" class="ext-browser-btn" type="button">
+            <span class="ext-ico">🟡</span>
+            <div>
+              <strong>Google Chrome'a Yükle</strong>
+              <small>Geliştirici Modu -> Paketlenmemiş öğe yükle (CTRL+V)</small>
+            </div>
+          </button>
+        </div>
+        <div id="extModalFeedback" class="ext-feedback hidden"></div>
+      </div>
+      <div class="media-modal-footer">
+        <button id="btnExtOpenFolder" class="btn btn-secondary btn-sm" type="button">📁 Eklenti Klasörünü Aç</button>
+        <button id="btnCloseExtensionModalFooter" class="btn btn-primary btn-sm" type="button">Tamam</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js?v=3.1"></script>
 </body>
 </html>

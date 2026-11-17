@@ -4,8 +4,15 @@ downloads/*
 
 # Taşınabilir ikili dosyalar ve paketler (GitHub 100MB limitini aşmamak için)
 bin/
+dist/
+*.exe
 *.zip
 *.tar.gz
+
+# EXE derleme önbelleği ve geçici SDK dosyaları
+build/webview2/
+build/build_id.txt
+build/preview_icon.png
 
 # Günlük ve sistem dosyaları
 *.log

@@ -747,6 +747,71 @@ document.addEventListener("DOMContentLoaded", () => {
     triggerOpenFolder("");
   });
 
+  // 12.1 Tarayıcı Eklentisi Kurulum Modalı
+  const btnOpenExtensionModal = document.getElementById("btnOpenExtensionModal");
+  const extensionModal = document.getElementById("extensionModal");
+  const extensionModalBackdrop = document.getElementById("extensionModalBackdrop");
+  const btnCloseExtensionModal = document.getElementById("btnCloseExtensionModal");
+  const btnCloseExtensionModalFooter = document.getElementById("btnCloseExtensionModalFooter");
+  const extPathPreview = document.getElementById("extPathPreview");
+  const extModalFeedback = document.getElementById("extModalFeedback");
+  const btnExtFirefox = document.getElementById("btnExtFirefox");
+  const btnExtEdge = document.getElementById("btnExtEdge");
+  const btnExtChrome = document.getElementById("btnExtChrome");
+  const btnExtOpenFolder = document.getElementById("btnExtOpenFolder");
+
+  async function openExtensionModal() {
+    if (!extensionModal) return;
+    if (extModalFeedback) extModalFeedback.classList.add("hidden");
+    extensionModal.classList.remove("hidden");
+    try {
+      const res = await fetch("/api/extension-info");
+      const info = await res.json();
+      if (extPathPreview) {
+        extPathPreview.textContent = info.extensionDir || "Bulunamadı";
+      }
+    } catch {
+      if (extPathPreview) extPathPreview.textContent = "Eklenti yolu okunamadı";
+    }
+  }
+
+  function closeExtensionModal() {
+    if (extensionModal) extensionModal.classList.add("hidden");
+  }
+
+  async function triggerExtensionSetup(target) {
+    try {
+      const res = await fetch("/api/open-extension", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ target }),
+      });
+      const data = await res.json();
+      if (extModalFeedback) {
+        extModalFeedback.classList.remove("hidden");
+        if (target === "firefox") {
+          extModalFeedback.textContent = "✓ manifest.json yolu panoya kopyalandı! Açılan Firefox sekmesinde 'Geçici Eklenti Yükle' deyip CTRL+V yapın.";
+        } else if (target === "edge" || target === "chrome") {
+          extModalFeedback.textContent = "✓ Eklenti klasörü yolu panoya kopyalandı! Açılan sayfada 'Geliştirici Modu -> Paketlenmemiş öğe yükle' deyip CTRL+V yapın.";
+        } else {
+          extModalFeedback.textContent = "✓ Eklenti klasörü açıldı ve yolu panoya kopyalandı.";
+        }
+      }
+      if (extPathPreview && data.extensionDir) {
+        extPathPreview.textContent = data.extensionDir;
+      }
+    } catch {}
+  }
+
+  if (btnOpenExtensionModal) btnOpenExtensionModal.addEventListener("click", openExtensionModal);
+  if (extensionModalBackdrop) extensionModalBackdrop.addEventListener("click", closeExtensionModal);
+  if (btnCloseExtensionModal) btnCloseExtensionModal.addEventListener("click", closeExtensionModal);
+  if (btnCloseExtensionModalFooter) btnCloseExtensionModalFooter.addEventListener("click", closeExtensionModal);
+  if (btnExtFirefox) btnExtFirefox.addEventListener("click", () => triggerExtensionSetup("firefox"));
+  if (btnExtEdge) btnExtEdge.addEventListener("click", () => triggerExtensionSetup("edge"));
+  if (btnExtChrome) btnExtChrome.addEventListener("click", () => triggerExtensionSetup("chrome"));
+  if (btnExtOpenFolder) btnExtOpenFolder.addEventListener("click", () => triggerExtensionSetup("folder"));
+
   // Dışarıdan veya eklentiden gelen aktif indirmeleri eşitle
   async function syncActiveJobs() {
     try {

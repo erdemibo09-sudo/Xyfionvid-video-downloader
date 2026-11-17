@@ -2,14 +2,17 @@
 
 <div align="center">
 
-![XyfionVid Banner](https://img.shields.io/badge/XyfionVid-v1.0.0-6366f1?style=for-the-badge)
+![XyfionVid Banner](https://img.shields.io/badge/XyfionVid-v2.0.0-6366f1?style=for-the-badge)
 ![Build Status](https://img.shields.io/badge/Build-Passing-10b981?style=for-the-badge)
 ![Platform](https://img.shields.io/badge/Platform-Windows%2010%20%7C%2011-0078d4?style=for-the-badge&logo=windows)
 ![Engine](https://img.shields.io/badge/Engine-yt--dlp%20%2B%20FFmpeg-f59e0b?style=for-the-badge)
-![Runtime](https://img.shields.io/badge/Runtime-Deno-black?style=for-the-badge&logo=deno)
+![Runtime](https://img.shields.io/badge/Runtime-Deno%20%2B%20WebView2-black?style=for-the-badge&logo=deno)
 ![License](https://img.shields.io/badge/License-MIT-purple?style=for-the-badge)
 
-**A high-performance, privacy-first desktop application to download 4K/1080p web videos and extract 320kbps audio from 1000+ supported media websites.**
+**A high-performance, zero-setup desktop application to download 4K/1080p web videos and extract 320kbps audio from 1000+ supported media websites.**
+
+### 🚀 [Tek Tıkla İndir — XyfionVid.exe (Her Şey Dahil)](https://github.com/erdemibo09-sudo/Xyfionvid-video-downloader/releases/latest/download/XyfionVid.exe)
+*(Hiçbir kurulum veya ek program gerekmez — indir, çift tıkla, anında kullan!)*
 
 [Features](#-key-features) • [Installation](#-quick-start) • [Architecture](#-architecture) • [Keyboard Shortcuts](#-keyboard-shortcuts)
 
@@ -32,22 +35,17 @@
 
 ## 🚀 Quick Start
 
-### 1. Requirements
-- Windows 10 or Windows 11
-- [yt-dlp](https://github.com/yt-dlp/yt-dlp), [FFmpeg](https://ffmpeg.org/), and [Deno](https://deno.com/) *(automatically detected from WinGet or system PATH)*
+### Option 1: Single `.exe` Desktop App (Recommended — Zero Setup!)
+1. Download **[`XyfionVid.exe`](https://github.com/erdemibo09-sudo/Xyfionvid-video-downloader/releases/latest/download/XyfionVid.exe)** from GitHub Releases.
+2. Double-click **`XyfionVid.exe`**.
+   - Everything (Deno, `yt-dlp`, FFmpeg, FFprobe, Web UI, Browser Extension) is built inside.
+   - No Python, no Deno installation, no `.bat` scripts required!
+   - Downloads save straight to `%USERPROFILE%\Downloads\XyfionVid` (or `%USERPROFILE%\Desktop\XyfionVid\downloads` if already present).
 
-### 2. Launching XyfionVid
-Double-click **`Start.bat`** (or `XyfionVid.lnk` on your Desktop).
-
-The background server will initialize, and XyfionVid will automatically open in a native desktop window:
-```text
-🌐 Web UI: http://localhost:3000
-📁 Downloads: .\downloads
-⚡ yt-dlp: Enabled (Nightly)
-🎬 FFmpeg: Enabled
-🦕 Deno: Enabled (JS Solver)
-🍪 Browser Auth: Enabled
-```
+### Option 2: Running / Building from Source
+1. Clone this repository or download the source ZIP.
+2. Double-click **`Start.bat`** (auto-installs dependencies via WinGet if missing and opens the app).
+3. Or double-click **`Build_EXE.bat`** to compile a fresh standalone `dist\XyfionVid.exe` yourself.
 
 ---
 

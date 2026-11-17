@@ -1,56 +1,41 @@
-# ⚡ NovaVid — Ultra HD Video İndirici & Dönüştürücü
+# ⚡ XyfionVid — Ultra HD Video İndirici & Dönüştürücü
 
-İnternetteki 1.700'den fazla video ve medya platformundan en yüksek kalitede (4K, 2K, 1080p Full HD) video ve ses indirme, dönüştürme uygulaması.
+İnternetteki 1.000'den fazla video ve medya platformundan en yüksek kalitede (4K, 2K, 1080p Full HD) video ve ses indirme, dönüştürme masaüstü uygulaması.
 
 ---
 
 ## ✨ Özellikler
 
+- **Tek Dosya `.exe` Masaüstü Uygulaması:** Deno, `yt-dlp`, FFmpeg, FFprobe ve tarayıcı eklentisi tamamen uygulamanın içine gömülüdür. Kurulum gerektirmez!
 - **Ultra HD & 4K Desteği:** 4K (2160p), 2K (1440p), 1080p 60fps ve 720p HD kalitelerinde kayıpsız FFmpeg birleştirmesi ile indirme.
-- **Ses Ayıklama ve Dönüştürme:** Videoları anında yüksek kaliteli MP3 (320 kbps), WAV veya M4A ses dosyasına çevirme.
-- **Yerel Dosya Dönüştürücü:** Bilgisayarınızdaki MKV, WebM, AVI, MOV, FLV videolarını her cihazda sorunsuz açılan MP4 formatına dönüştürme ve dosya boyutunu küçültme (kompresyon).
-- **Toplu İndirme (Batch Download):** Birden fazla linki alt alta yapıştırıp tek tıkla arka arkaya indirme imkanı.
-- **Canlı İlerleme Takibi:** Yüzde, anlık indirme hızı (MB/s), kalan süre (ETA) ve indirilen dosya boyutu.
-- **Gelişmiş Bot Koruması:** Web sitelerinin bot kontrollerini aşmak için entegre Deno JS motoru ve otomatik tarayıcı doğrulaması.
-- **Masaüstü Uygulaması Deneyimi:** Tarayıcı çubuğu olmadan tam bir masaüstü yazılımı penceresinde çalışır.
-- **Hızlı Klasör Erişimi:** İndirilen dosyalara tek tıkla "Klasörde Göster" ve "Oynat" seçenekleri.
+- **Ses Ayıklama ve Dönüştürme:** Videoları anında yüksek kaliteli MP3 (320 kbps), M4A, FLAC, WAV veya OPUS ses dosyasına çevirme.
+- **Yerel Dosya Dönüştürücü:** Bilgisayarınızdaki MKV, WebM, AVI, MOV, FLV videolarını her cihazda sorunsuz açılan MP4 veya GIF formatına dönüştürme ve boyut küçültme.
+- **Toplu İndirme (Batch Download):** Birden fazla linki alt alta yapıştırıp tek tıkla sırayla indirme imkanı.
+- **Tarayıcı Eklentisi Desteği:** Uygulama üst menüsündeki **"Tarayıcı Eklentisi"** butonu ile Firefox, Edge veya Chrome eklentisini saniyeler içinde kurabilirsiniz.
+- **Temiz Kapanış:** Pencereyi kapattığınızda arka planda çalışan tüm işlemler otomatik olarak sonlandırılır.
 
 ---
 
-## 🚀 Nasıl Başlatılır?
+## 🚀 Nasıl Kullanılır?
 
-1. **Masaüstünüzdeki Kısayol:**  
-   Masaüstünüzde oluşan **"NovaVid"** kısayoluna çift tıklayın.
+1. **Tek Tıkla Başlatma (`.exe` Sürümü):**  
+   GitHub Releases sayfasından **`XyfionVid.exe`** dosyasını indirin ve çift tıklayın. İlk açılışta birkaç saniye içinde motorları hazırlar ve kendi penceresinde açılır.
 
-2. **Klasör İçinden Başlatma:**  
-   Proje klasöründeki **`Start.bat`** (veya `Başlat.bat`) dosyasına çift tıklayarak uygulamayı başlatabilirsiniz.
-
-Uygulama açıldığında bağımsız bir masaüstü penceresi olarak karşınıza gelecektir.
+2. **Kaynak Koddan Başlatma:**  
+   Depoyu indirdiyseniz **`Start.bat`** dosyasına çift tıklayarak başlatabilir veya **`Build_EXE.bat`** ile kendi `XyfionVid.exe` dosyanızı üretebilirsiniz.
 
 ---
 
 ## 📂 İndirilen Dosyalar Nerede Saklanır?
 
-İndirilen ve dönüştürülen tüm videolar ve ses dosyaları proje ana dizinindeki:  
-`./downloads`  
-klasörüne kaydedilir. Arayüzün sağ üstündeki **"İndirilenler Klasörü"** butonuna basarak doğrudan bu klasörü Windows Gezgini'nde açabilirsiniz.
-
----
-
-## 🛠️ Desteklenen Formatlar
-
-- **Desteklenen Platformlar:** 1.700'den fazla açık video ve ses akışı sağlayan web platformu.
-- **İndirme ve Dönüştürme Formatları:**
-  - **Video:** MP4 (H.264 / AAC - Evrensel), MKV (Çoklu Ses/Altyazı), WebM (VP9 Web), MOV (Apple/Kurgu)
-  - **Ses & Müzik:** MP3 (320 kbps Stüdyo), M4A / AAC (Orijinal Ultra Hızlı), FLAC (Kayıpsız Odyofil), WAV (Ham Stüdyo), OPUS (Yüksek Verimli)
-  - **Animasyon:** GIF (Hareketli Resim Dönüştürücü)
-- **Çözünürlükler:** 4K (2160p), 2K (1440p), 1080p Full HD, 720p HD, 480p, 360p
+İndirilen ve dönüştürülen tüm dosyalar varsayılan olarak Windows **`İndirilenler\XyfionVid`** (`%USERPROFILE%\Downloads\XyfionVid`) veya mevcut **`Masaüstü\XyfionVid\downloads`** klasörüne kaydedilir.  
+Arayüzün sağ üstündeki **"İndirilenler Klasörü"** butonuna basarak doğrudan klasörü açabilirsiniz.
 
 ---
 
 ## ⚖️ Yasal Sorumluluk Reddi (Legal Disclaimer)
 
-> **Önemli Bilgilendirme:** NovaVid, yalnızca eğitim, araştırma, ders içeriklerini çevrimdışı izleme ve kişisel medya arşivleme (adil kullanım / fair-use) amacıyla geliştirilmiş açık kaynaklı bir araçtır.
+> **Önemli Bilgilendirme:** XyfionVid, yalnızca eğitim, araştırma, ders içeriklerini çevrimdışı izleme ve kişisel medya arşivleme (adil kullanım / fair use) amacıyla geliştirilmiş açık kaynaklı bir araçtır.
 > - Bu yazılım hiçbir dijital hak yönetimi (DRM) veya şifreli kopya koruma teknolojisini aşmaz.
 > - Yazılım ve geliştiricileri hiçbir telifli medya içeriğini sunucularında barındırmaz, depolamaz veya yayınlamaz.
 > - İndirilen ve dönüştürülen materyallerin kullanımında ilgili platformların kullanım koşullarına ve yerel telif hakkı mevzuatına uyulması son kullanıcının sorumluluğundadır.
